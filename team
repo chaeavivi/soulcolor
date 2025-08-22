@@ -510,24 +510,77 @@
                 downloadSection.style.display = 'none';
             }
             
-            // 통계 표시
+           // 통계 표시
             if (validCount > 0) {
-                let statsHTML = `<h3>📊 색상 통계 (총 ${validCount}명)</h3><div class="color-count">`;
+                // 색상별 인원 통계 (중복 제거)
+                let personColorStats = {};
+                const allColors = ['red', 'yellow', 'orange', 'green', 'cyan', 'navy', 'purple', 'magenta', 'pink'];
                 
-                // 색상별 정렬
+                // 모든 색상 초기화
+                allColors.forEach(color => {
+                    personColorStats[color] = new Set(); // Set을 사용해 중복 제거
+                });
+                
+                // 각 사람별로 가진 색상 체크
+                allResults.forEach(result => {
+                    const personColors = new Set();
+                    result.colors.forEach(colorPair => {
+                        colorPair.forEach(color => {
+                            if (color !== 'clear') {
+                                personColors.add(color);
+                            }
+                        });
+                    });
+                    
+                    // 이 사람이 가진 색상들을 통계에 추가
+                    personColors.forEach(color => {
+                        personColorStats[color].add(result.name);
+                    });
+                });
+                
+                let statsHTML = `
+                    <h3>📊 색상 통계 (총 ${validCount}명)</h3>
+                    <div style="margin-bottom: 20px;">
+                        <h4 style="margin-bottom: 10px; color: #666;">🎨 색상별 보유 인원</h4>
+                        <div class="color-count">
+                `;
+                
+                // 색상별 인원 수 표시 (많은 순으로 정렬)
+                const sortedPersonStats = Object.entries(personColorStats)
+                    .map(([color, nameSet]) => [color, nameSet.size])
+                    .sort((a, b) => b[1] - a[1]);
+                
+                sortedPersonStats.forEach(([color, count]) => {
+                    if (count > 0) {
+                        statsHTML += `<span class="count-badge ${color}" style="display: inline-flex; align-items: center;">
+                            ${getColorName(color)}: ${count}명
+                        </span>`;
+                    }
+                });
+                
+                statsHTML += `
+                        </div>
+                    </div>
+                    <div>
+                        <h4 style="margin-bottom: 10px; color: #666;">📈 색상 출현 횟수</h4>
+                        <div class="color-count">
+                `;
+                
+                // 기존 출현 횟수 통계
                 const sortedColors = Object.entries(colorStats).sort((a, b) => b[1] - a[1]);
                 
                 sortedColors.forEach(([color, count]) => {
                     statsHTML += `<span class="count-badge ${color}">${getColorName(color)}: ${count}회</span>`;
                 });
                 
-                statsHTML += '</div>';
+                statsHTML += '</div></div>';
                 statsDiv.innerHTML = statsHTML;
                 statsDiv.style.display = 'block';
             } else {
                 statsDiv.style.display = 'none';
             }
         }
+
         
         // 개별 이미지 다운로드
         function downloadSingleImage(cardId, name) {
